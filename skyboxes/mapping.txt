@@ -1,0 +1,15 @@
+
+px = 0
+nx = 1
+ny = 2
+py = 3
+pz = 4
+nz = 5
+
+
+right  = 0
+left   = 1
+bottom = 2
+top    = 3
+front  = 4
+back   = 5
