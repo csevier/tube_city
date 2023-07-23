@@ -1,8 +1,8 @@
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
-from panda3d.core import Vec3, Point3, BitMask32, Vec4, InputDevice,TextureAttrib, TextureStage
+from panda3d.core import Vec3, Point3, BitMask32, Vec4, InputDevice,TransparencyAttrib,TextureAttrib, TextureStage
 from panda3d.bullet import BulletRigidBodyNode, BulletSphereShape
-from panda3d.physics import ActorNode
+
 
 class Hamster(DirectObject):
     
@@ -166,11 +166,12 @@ class Hamster(DirectObject):
         hamster.setH(180)
         visual_sphere = loader.loadModel('models/sphere.egg')
         visual_sphere.setShaderOff()
-        visual_sphere.setTransparency(1)
         visual_sphere.reparentTo(self.sphere)
+        visual_sphere.setTransparency(1)
+        visual_sphere.setBin("transparent",0)
+
         visual_sphere.setColorScale(1,1,1,.6)
         visual_sphere.setLightOff()
-        visual_sphere.setDepthWrite(True)
         mat = hamster.findMaterial("body")
         mat.setBaseColor((0,1,1,1))
         base.taskMgr.add(self.update)

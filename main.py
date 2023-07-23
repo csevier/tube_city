@@ -2,6 +2,7 @@ from direct.showbase.ShowBase import ShowBase, TextureStage, TexGenAttrib
 from direct.filter.CommonFilters import CommonFilters
 from direct.showbase.InputStateGlobal import inputState
 from robotnik import collision_to_rigidbody
+from fix_gltf_bam import render_stage_convert
 from panda3d.core import (loadPrcFileData, 
                          WindowProperties, 
                          AmbientLight, 
@@ -50,9 +51,11 @@ class MyApp(ShowBase):
         self._set_up_toon_shading()
         self._setup_level()
         self.accept("q", self.exit)
+        
         self.hamster = Hamster()
         self._setup_controller()
-        self._debug_bullet()
+        self.accept("controller-face_start", self.exit)
+        #self._debug_bullet()
     
     def _setup_controller(self):
         try:
@@ -76,19 +79,18 @@ class MyApp(ShowBase):
     
     def _set_up_environment_lighting(self):
         base.render.setShaderAuto()
-        base.render.setAttrib(LightRampAttrib.makeSingleThreshold(0.2,0.6))
+        base.render.setAttrib(LightRampAttrib.makeSingleThreshold(0.2,1.8))
         self.sun = DirectionalLight("sun")
-        self.sun.setColor((0.8, 0.8, 0.8, 1))
+        self.sun.setColor((1, 1, 1, 1))
         base.sunnp = self.render.attachNewNode( self.sun)
         base.sunnp.setZ(base.sunnp, 50)
         base.sunnp.setY(base.sunnp, -30)
         base.sunnp.setP(base.sunnp, -90)
         base.sunnp.node().setShadowCaster(True, 512, 512)
         base.sunnp.node().getLens().setFilmSize(2,2)
-        base.sunnp.node().showFrustum()
         base.render.setLight(base.sunnp)
         self.ambient_light = AmbientLight('alight')
-        self.ambient_light.setColor((0.9, 0.9, 0.9, 1))
+        self.ambient_light.setColor((0.8,0.8,0.8, 1))
         self.alnp = self.render.attachNewNode(self.ambient_light)
         self.render.setLight(self.alnp)
     
@@ -118,20 +120,17 @@ class MyApp(ShowBase):
     def _setup_level(self):
         base.bullet_world_node_path = self.render.attachNewNode('World')
         base.bullet_world = BulletWorld()
-        base.bullet_world.setGravity(Vec3(0, 0, 0)) # (0,0,-14)
-        playground = loader.loadModel("levels/playground2.bam")
-        for node_path in playground.find_all_matches('**/+GeomNode'):
-            geom_states = node_path.node().get_geom_states()
-            for geom_state in geom_states:
-                if geom_state.has_attrib(MaterialAttrib):
-                    mat = geom_state.get_attrib(MaterialAttrib).get_material()
-                    mat.clear_emission()
+        base.bullet_world.setGravity(Vec3(0, 0, -14)) # (0,0,-14)
+        playground = loader.loadModel("levels/playground.bam")
+        render_stage_convert(playground, use_modulate = True, use_normal = False, use_selector = False, use_emission = False)
         for node_path in playground.find_all_matches('**/+BulletRigidBodyNode'):
-            base.bullet_world.attachRigidBody(node_path.node())
-        #playground = loader.loadModel("levels/playground.egg")
+           node_path.node().setMass(0)
+           node_path.node().setFriction(2)
+           node_path.node().setRestitution(2)
+           base.bullet_world.attachRigidBody(node_path.node())
         playground.reparentTo(base.bullet_world_node_path)
+       
         #collision_to_rigidbody(base.bullet_world, playground)
-        #base.bullet_world_node_path.ls()
         self.taskMgr.add(self.update, sort=-2)
 
     def update(self, task):
