@@ -1,5 +1,7 @@
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase.InputStateGlobal import inputState
+from direct.motiontrail.MotionTrail import MotionTrail
+from direct.particles.ParticleEffect import ParticleEffect
 from panda3d.core import Vec3, Point3, BitMask32, Vec4, InputDevice,TransparencyAttrib,TextureAttrib, TextureStage
 from panda3d.bullet import BulletRigidBodyNode, BulletSphereShape
 
@@ -10,18 +12,51 @@ class Hamster(DirectObject):
         super().__init__()
         self.last_mouse_x = 0
         self.last_mouse_y = 0
-        self.jump_power = 7
+        self.jump_power = 9
         self.ground_normal = Vec3(0, 0, 0)
         self._setup_camera()
+        self._setup_sound()
         self._subscribe_to_events()
         self._setup_rigid_bodies()
+        self._setup_particles()
 
+    def _setup_particles(self):
+        trail_colors = (
+            Vec4(0.0, 1.0, 0.0, 1),
+            Vec4(0.0, 1.0, 0.2, 1),
+            Vec4(1.0,  0.0, 0.7, 1),
+            Vec4(0.0, 0.0, 0.2, 1),
+        )
+
+        # It leaves a trail of flames.
+        # trail = MotionTrail("fire trail", self.sphere)
+        # trail.register_motion_trail()
+        # trail.geom_node_path.reparent_to(render)
+        # trail.set_texture(loader.load_texture("particles/plasma.png"))
+        # trail.time_window = 0.25 # Length of trail
+        # trail.add_vertex(Point3(0, 0, 1))
+        # trail.add_vertex(Point3(0, 0, -1))
+        # trail.set_vertex_color(0, trail_colors[0], trail_colors[1])
+        # trail.set_vertex_color(1, trail_colors[2], trail_colors[3])
+        # trail.update_vertices()
+        #trail.hide()
+        self.smoke = ParticleEffect()
+        self.smoke.loadConfig("particles/smoke.ptf")
+
+    def _setup_sound(self):
+        self.jump_sound = base.loader.loadSfx("sound/fx/jump.wav")
+        self.skid_sound = base.loader.loadSfx("sound/fx/skid.wav")
+        self.bounce_sound = base.loader.loadSfx("sound/fx/bounce.wav")
+        self.skid_sound.setVolume(1)
+        self.skid_sound.setLoop(True)
 
     def _check_ground(self, task):
         result = base.bullet_world.contactTest(self.sphere.node())
         if result.getNumContacts() > 0:
             contact = result.getContacts()[0]
             mpoint = contact.getManifoldPoint()
+            if self.ground_normal == Vec3(0,0,0) and abs(self.sphere.node().getLinearVelocity().length()) > 8:
+                self.bounce_sound.play()
             self.ground_normal = mpoint.getNormalWorldOnB()
         else:
            self.ground_normal = Vec3(0, 0, 0)
@@ -54,7 +89,7 @@ class Hamster(DirectObject):
             if inputState.isSet('reverse'):
                 torque.setX(1.0)
                 force.setY(-1.0)
-            if inputState.isSet('left'):    
+            if inputState.isSet('left'):   
                 torque.setY(-1.0)
                 force.setX(-1.0)
             if inputState.isSet('right'):   
@@ -72,7 +107,10 @@ class Hamster(DirectObject):
         self.sphere.node().applyForce(force, Point3(0,0, 0))
 
         if inputState.isSet('break'):
-            self.slow()  
+            self.slow()
+        else:
+            if self.skid_sound.status() == self.skid_sound.PLAYING:
+                self.skid_sound.stop()  
 
     def _subscribe_to_events(self):
         inputState.watchWithModifiers('forward', 'w')
@@ -88,16 +126,38 @@ class Hamster(DirectObject):
         self.accept("controller-face_b", self.reset)
         self.accept("wheel_up", self._zoom_in)
         self.accept("wheel_down", self._zoom_out)
+
+    def _stop_particle(self, task):
+        self.smoke.disable()
+        return task.done
         
 
     def slow(self):
         self.sphere.node().setAngularVelocity(0)
+        if self.ground_normal != Vec3(0,0,0):
+            if abs(self.sphere.node().getLinearVelocity().length()) > 12:
+                if self.skid_sound.status() != self.skid_sound.PLAYING:
+                    self.skid_sound.play()
+                self.smoke.start(parent = base.render, renderParent = base.render)
+                self.smoke.setPos(self.sphere.getPos() + Vec3(0,0,-1))
+                base.taskMgr.doMethodLater(1, self._stop_particle, "smoke stop")
+            else:
+                if self.skid_sound.status() == self.skid_sound.PLAYING:
+                    self.skid_sound.stop()
+
+
+
+            
 
     def reset(self):
         self.sphere.setPos(0,0,0)
 
     def jump(self):
-        self.sphere.node().applyImpulse(self.ground_normal * self.jump_power, Point3(0,0,0))
+        if self.ground_normal != Vec3(0,0,0):
+            self.jump_sound.play()
+            self.sphere.node().applyImpulse(self.ground_normal * self.jump_power, Point3(0,0,0))
+        else:
+            self.jump_sound.stop()
 
     def _setup_camera(self):
         base.disableMouse()

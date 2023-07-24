@@ -50,12 +50,20 @@ class MyApp(ShowBase):
         self._set_up_skybox()
         self._set_up_toon_shading()
         self._setup_level()
+        self._setup_music()
         self.accept("q", self.exit)
         
         self.hamster = Hamster()
         self._setup_controller()
         self.accept("controller-face_start", self.exit)
+        base.enableParticles()
         #self._debug_bullet()
+
+    def _setup_music(self):
+        self.background_music = base.loader.loadSfx("sound/songs/Zane Little - Dizzy Racing.ogg")
+        self.background_music.setVolume(0.2)
+        self.background_music.setLoop(True)
+        self.background_music.play()
     
     def _setup_controller(self):
         try:
