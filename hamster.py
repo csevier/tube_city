@@ -21,33 +21,24 @@ class Hamster(DirectObject):
         self._setup_particles()
 
     def _setup_particles(self):
-        trail_colors = (
-            Vec4(0.0, 1.0, 0.0, 1),
-            Vec4(0.0, 1.0, 0.2, 1),
-            Vec4(1.0,  0.0, 0.7, 1),
-            Vec4(0.0, 0.0, 0.2, 1),
-        )
-
-        # It leaves a trail of flames.
-        # trail = MotionTrail("fire trail", self.sphere)
-        # trail.register_motion_trail()
-        # trail.geom_node_path.reparent_to(render)
-        # trail.set_texture(loader.load_texture("particles/plasma.png"))
-        # trail.time_window = 0.25 # Length of trail
-        # trail.add_vertex(Point3(0, 0, 1))
-        # trail.add_vertex(Point3(0, 0, -1))
-        # trail.set_vertex_color(0, trail_colors[0], trail_colors[1])
-        # trail.set_vertex_color(1, trail_colors[2], trail_colors[3])
-        # trail.update_vertices()
-        #trail.hide()
         self.smoke = ParticleEffect()
         self.smoke.loadConfig("particles/smoke.ptf")
+        # orientation_trail = MotionTrail("fire trail", self.sphere)
+        # orientation_trail.register_motion_trail()
+        # orientation_trail.geom_node_path.reparent_to(base.render)
+        # #orientation_trail.set_texture(loader.load_texture("particles/plasma.png"))
+        # orientation_trail.time_window = .6 # Length of trail
+        # orientation_trail.add_vertex(Point3(0, 0, 1))
+        # orientation_trail.add_vertex(Point3(0, 0,-1))
+        # orientation_trail.set_vertex_color(0, Vec4(0,1, 0, 1),Vec4(0,1, 0, 1))
+        # orientation_trail.set_vertex_color(1, Vec4(0,1, 0, 1),Vec4(0,1, 0, 1))
+        # orientation_trail.update_vertices()
 
     def _setup_sound(self):
         self.jump_sound = base.loader.loadSfx("sound/fx/jump.wav")
         self.skid_sound = base.loader.loadSfx("sound/fx/skid.wav")
         self.bounce_sound = base.loader.loadSfx("sound/fx/bounce.wav")
-        self.skid_sound.setVolume(1)
+        self.skid_sound.setVolume(0.3)
         self.skid_sound.setLoop(True)
 
     def _check_ground(self, task):
